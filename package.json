@@ -1,0 +1,21 @@
+{
+  "name": "last-mile",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "dev:worker": "tsx src/worker.ts",
+    "dev:run": "tsx src/client.ts",
+    "dev:score": "tsx src/cli/score.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@hatchet-dev/typescript-sdk": "^1.19.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  }
+}

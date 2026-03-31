@@ -312,6 +312,113 @@ lastmile run "需求描述"  # 提交需求，流水线自动启动
 
 用户不需要知道 Hatchet 和 Paperclip 的存在。复杂性封装在 CLI 里。
 
+### The Fool 内部自循环机制
+
+#### 问题
+
+如果 Agent 提交计划后直接交给人类审批，人类要自己找问题——评分负担重、容易放水。
+如果加一个 Fool Agent 挑战但总控不回应，等于把消化挑战的负担推给了人类。
+
+#### 解决方案：内部辩论收敛 + 人类裁决争议
+
+```
+总控提计划
+  ↓
+Fool Agent 挑战（选择合适的模式）
+  ↓
+总控回应挑战（修改计划 或 反驳质疑）
+  ↓
+[收敛?] ── 是 → 人类审批（只看最终计划 + 争议摘要）
+         └─ 否 → Fool 再挑战 → 总控再回应 → [收敛?]
+                                              └─ 最多 3 轮，强制收敛
+```
+
+人类看到的不是"计划 + 一堆质疑"，而是**"经过内部辩论后的成熟计划 + 仍有分歧的少数关键点"**。
+人类只需要对那几个关键分歧做判断——评分负担从"审查整个计划"降到"裁决几个争议点"。
+
+#### Fool Agent 在不同环节的模式选择
+
+| 环节 | The Fool 模式 | 挑战目标 | 示例 |
+|------|-------------|---------|------|
+| 总控拆解后 | 苏格拉底（暴露假设） | 拆解逻辑是否合理 | "你假设前端最贴近用户，但如果这是 API 产品呢？" |
+| 阶段计划审批前 | 辩证法（反论） | 技术方案是否最优 | "你用 Canvas 裁剪，但 CSS clip-path 更简单，为什么不用？" |
+| 执行完成后 | Pre-mortem（失败模式） | 产出在生产中会怎么失败 | "这个实现在高并发下会怎么失败？" |
+| 最终验收时 | 红队（攻击向量） | 安全和边界问题 | "用户能不能上传恶意文件绕过校验？" |
+| 知识提取时 | 证据审计 | 提取的经验是否可靠 | "这条经验基于一次运行还是多次验证？" |
+
+#### 多模型多视角
+
+Fool Agent 可以用不同于主 Agent 的模型——比如主 Agent 用 Sonnet 做规划，Fool 用 Opus 做挑战。
+天然的多模型多视角，避免同一个模型的盲区。
+
+#### 在 Hatchet DAG 中的实现
+
+```typescript
+// 内部自循环子流程
+function foolLoop(workflow, planStep, maxRounds = 3) {
+  let current = planStep;
+
+  for (let round = 1; round <= maxRounds; round++) {
+    const challenge = workflow.task({
+      name: `fool-challenge-r${round}`,
+      parents: [current],
+      fn: async (input) => {
+        // Fool Agent（Opus）挑战计划
+        return await invokeAgent(foolAgentId, {
+          mode: selectFoolMode(input.phase), // 根据环节选模式
+          target: input.plan,
+          previousDebate: input.debate || [],
+        });
+      }
+    });
+
+    const respond = workflow.task({
+      name: `plan-respond-r${round}`,
+      parents: [challenge],
+      fn: async (input) => {
+        // 总控回应挑战：修改计划或反驳
+        const response = await invokeAgent(masterAgentId, {
+          challenges: input.challenges,
+          currentPlan: input.plan,
+        });
+        return {
+          plan: response.revisedPlan,
+          debate: [...input.debate, { challenge: input.challenges, response: response.rebuttal }],
+          converged: response.allChallengesResolved,
+          unresolvedDisputes: response.unresolvedDisputes,
+        };
+      }
+    });
+
+    current = respond;
+
+    // 如果收敛了，跳出循环进入人类审批
+    // Hatchet 支持条件边——converged=true 时跳到 approve
+  }
+
+  return current; // 最后一轮的输出作为 human-approve 的输入
+}
+```
+
+#### 辩论记录 = 知识沉淀
+
+每一轮辩论的过程都记录在文档里：
+- Fool 挑战了什么
+- 总控怎么回应的
+- 人类最终裁决了什么
+
+这本身就是高质量的知识资产。下次遇到类似问题，总控的 MEMORY 里有：
+"上次 Fool 质疑了 X 方案的性能问题，我改用了 Y 方案，人类确认了 Y 更好。"
+
+#### 效果
+
+| 指标 | 没有 Fool | 有 Fool 但不循环 | 有 Fool + 内部循环 |
+|------|----------|----------------|------------------|
+| 人类审查负担 | 高（自己找问题） | 中（看计划+质疑） | **低（只裁决争议点）** |
+| 计划质量 | 取决于 Agent | 取决于 Agent | **经过辩论打磨** |
+| 规划注水风险 | 高 | 中（Fool 会指出） | **低（Fool 逼总控实质回应）** |
+| 知识沉淀 | 无 | 有挑战记录 | **有完整辩论过程** |
+
 ### 实施路线图
 
 ```

@@ -107,6 +107,62 @@ prompt 里写了 curl 命令，但 Agent 用 Claude Code 的工具而不是 curl
 ### 5. Skill 深度融合只实现了 feature-forge 格式检查
 5 个深度融合 Skill 中只有 feature-forge（plan 格式检查）真正写进了代码。code-reviewer、security-reviewer、spec-miner、the-fool 都还是设计。
 
+## 完整状态机（含未实现的 fool_challenging）
+
+```
+planning
+  → [Agent 运行完成]
+  → [门1: plan 文档存在 + 格式正确?]
+    → 不通过 → 返工（自动唤醒，reworkCount++）
+    → 通过 ↓
+fool_challenging  ← 【未实现，代码里没有这个阶段】
+  → [Fool Agent 挑战计划]
+  → [原 Agent 回应]
+  → awaiting_plan_approval ↓
+awaiting_plan_approval
+  → [门2: 人类评分 >= 3?]
+    → 不通过 → planning（返工）
+    → 通过 ↓
+executing
+  → [Agent 运行完成]
+  → [门3: report 文档存在 + 包含质量确认?]
+    → 不通过 → 返工
+    → 通过 ↓
+awaiting_result_score
+  → [人类评分 >= 3?]
+    → 不通过 → executing（返工）
+    → 通过 → done
+```
+
+当前代码（events.ts）跳过了 `fool_challenging`，直接从 `planning` 到 `awaiting_plan_approval`。
+
+## Agent 记忆注入的具体方案（待实现）
+
+参考 Clawith 的 SOUL/MEMORY 模式：
+
+每次调用 `ctx.agents.invoke()` 时，在 prompt 开头注入历史上下文：
+
+```
+【历史记录】
+- 本任务已返工 ${reworkCount} 次
+- 上次失败原因: ${lastFailReason}
+- 上次提交的 plan 文档摘要: ${lastPlanSummary}
+- 门控反馈: ${lastGateFeedback}
+
+【当前任务】
+...
+```
+
+实现位置：`events.ts` 里的 `PLAN_PROMPT` 和 `EXEC_PROMPT` 函数改为接受历史上下文参数，从 `StageState` 里读取 `lastFailReason` 字段（需要在 `StageState` 接口里加这个字段）。
+
+## Agent 不用 curl 的根因
+
+Agent 的 instructions 文件（Paperclip 里每个 Agent 的配置）没有教它 Paperclip API 的认证方式（`$PAPERCLIP_API_KEY` 和 `$PAPERCLIP_API_URL` 这两个环境变量在 Agent 运行环境里是否存在未验证）。Agent 回退到自己熟悉的工具（Claude Code 的 Write/Edit 工具）。
+
+解决方案：
+1. 在 Agent instructions 里明确写出 API 调用示例（带真实 URL 格式）
+2. 或者让 Agent 使用 Last Mile 插件注册的工具（`lastmile.pipeline:submit-plan`）而不是 curl
+
 ## 预算激励模型（设计完成，未实现）
 
 - 规划预算 = 执行预算 × 0.3（宽松，鼓励充分思考）

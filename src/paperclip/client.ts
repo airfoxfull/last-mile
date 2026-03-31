@@ -1,5 +1,3 @@
-import { Hatchet } from "@hatchet-dev/typescript-sdk";
-
 // Paperclip API client
 const PAPERCLIP_URL = process.env.PAPERCLIP_URL ?? "http://localhost:3100";
 
@@ -61,5 +59,10 @@ export const paperclip = {
       method: "POST",
       body: JSON.stringify({ body }),
     });
+  },
+
+  // Get agent status (for polling completion)
+  async getAgent(agentId: string) {
+    return paperclipRequest(`/api/agents/${agentId}`);
   },
 };

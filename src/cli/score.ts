@@ -1,47 +1,47 @@
-import { HatchetClient } from "@hatchet-dev/typescript-sdk";
+export {};
+// 人类审批/评分 CLI
+const WORKER_URL = process.env.WORKER_URL ?? "http://localhost:3200";
 
-// CLI tool for human scoring / approval
 async function main() {
   const args = process.argv.slice(2);
+  const threadId = getArg(args, "--thread");
+  const score = parseInt(getArg(args, "--score") ?? "", 10);
+  const feedback = getArg(args, "--feedback") ?? "";
 
-  const approve = args.includes("--approve");
-  const reject = args.includes("--reject");
-  const scoreIdx = args.indexOf("--score");
-  const score = scoreIdx >= 0 ? Number(args[scoreIdx + 1]) : 0;
-  const feedbackIdx = args.indexOf("--feedback");
-  const feedback = feedbackIdx >= 0 ? args[feedbackIdx + 1] : "";
-  const issueIdx = args.indexOf("--issue");
-  const issueId = issueIdx >= 0 ? args[issueIdx + 1] : "";
-
-  if (!approve && !reject) {
-    console.log("Last Mile 评分工具");
-    console.log("");
-    console.log("用法:");
-    console.log("  pnpm dev:score -- --approve --score 4 --issue <issueId>");
-    console.log("  pnpm dev:score -- --reject --feedback \"需要更详细的计划\" --issue <issueId>");
-    console.log("");
-    console.log("参数:");
-    console.log("  --approve          批准");
-    console.log("  --reject           拒绝");
-    console.log("  --score <1-5>      满意度评分");
-    console.log("  --feedback <text>  反馈意见");
-    console.log("  --issue <id>       Issue ID");
-    process.exit(0);
+  if (!threadId || isNaN(score)) {
+    console.error("用法: pnpm dev:score -- --thread <threadId> --score <1-5> [--feedback \"反馈\"]");
+    console.error("");
+    console.error("示例:");
+    console.error("  pnpm dev:score -- --thread pipeline-xxx-123 --score 4");
+    console.error("  pnpm dev:score -- --thread pipeline-xxx-123 --score 2 --feedback \"计划不够详细\"");
+    process.exit(1);
   }
 
-  const hatchet = HatchetClient.init();
+  // 先查状态
+  const statusRes = await fetch(`${WORKER_URL}/status?threadId=${threadId}`);
+  const status = (await statusRes.json()) as any;
 
-  console.log(`[score] ${approve ? "批准" : "拒绝"}, 分数: ${score}, Issue: ${issueId}`);
+  if (!status.interrupted) {
+    console.log(`[score] 流水线未在等待审批（当前阶段: ${status.phase}）`);
+    process.exit(1);
+  }
 
-  // Push approval event to Hatchet
-  await hatchet.events.push("pipeline:approval", {
-    approved: approve,
-    score,
-    feedback,
-    issueId,
+  console.log(`[score] 当前阶段: ${status.phase}, 返工次数: ${status.reworkCount}`);
+  console.log(`[score] 提交评分: ${score}/5${feedback ? `, 反馈: ${feedback}` : ""}`);
+
+  // 恢复流水线
+  const res = await fetch(`${WORKER_URL}/resume`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ threadId, score, feedback }),
   });
+  const result = (await res.json()) as any;
+  console.log(`[score] ${result.message}`);
+}
 
-  console.log(`[score] 事件已发送`);
+function getArg(args: string[], flag: string): string | undefined {
+  const idx = args.indexOf(flag);
+  return idx >= 0 && idx + 1 < args.length ? args[idx + 1] : undefined;
 }
 
 main().catch((err) => {

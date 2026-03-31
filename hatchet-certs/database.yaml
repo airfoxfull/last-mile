@@ -1,0 +1,28 @@
+cacheDuration: 5000000000
+dbName: hatchet
+directDatabaseMaxConns: 2
+directDatabaseMinConns: 1
+enforceUtcTimezone: true
+host: 127.0.0.1
+logger:
+  format: console
+  level: warn
+maxConnIdleTime: 60000000000
+maxConnLifetime: 900000000000
+maxConns: 50
+maxQueueConns: 50
+minConns: 1
+minQueueConns: 10
+password: hatchet
+port: 5431
+readReplicaMaxConns: 50
+readReplicaMinConns: 10
+seed:
+  adminEmail: admin@example.com
+  adminName: Admin
+  adminPassword: Admin123!!
+  defaultTenantId: 707d0855-80ab-4e1f-a156-f1c4546cbf52
+  defaultTenantName: Default
+  defaultTenantSlug: default
+sslMode: disable
+username: hatchet

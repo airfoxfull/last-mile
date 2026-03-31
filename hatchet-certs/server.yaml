@@ -1,0 +1,180 @@
+additionalLoggers:
+  pgxStats:
+    format: console
+    level: warn
+  queue:
+    format: console
+    level: warn
+alerting:
+  sentry:
+    environment: development
+    sampleRate: 1
+analytics:
+  aggregateFlushInterval: 60m
+  aggregateMaxKeys: 500
+  posthog: {}
+auth:
+  basicAuthEnabled: true
+  cookie:
+    domain: localhost
+    insecure: true
+    name: hatchet
+    secrets: prABJcflGQsdxFaK HJYZT6v0BlBSHglW
+  github:
+    scopes:
+    - read:user
+    - user:email
+  google:
+    scopes:
+    - openid
+    - profile
+    - email
+cronOperations:
+  dbHealthMetricsInterval: 60000000000
+  olapAnalyzeCronInterval: 10800000000000
+  olapMetricsInterval: 300000000000
+  taskAnalyzeCronInterval: 10800000000000
+  workerMetricsInterval: 60000000000
+  yesterdayRunCountMinute: 5
+email:
+  kind: postmark
+  postmark:
+    fromName: Hatchet Support
+  smtp:
+    basicAuth: {}
+    fromName: Hatchet Support
+enableDataRetention: true
+encryption:
+  cloudKMS: {}
+  jwt:
+    privateJWTKeyset: eyJlbmNyeXB0ZWRLZXlzZXQiOiJBWVF1RS9LOXNrRVluSzZaTmE2QldwREdMV3QrZ2RjL1Ercm9MYlFGeHRBL3ZFNW0rMlFuNk8reW9jVklZOXpmUlVqR01pa2N2L0M2OE56amhOSDhNYXgyV3lZN3VVZUMweW5wbnZ6c3MvRGlKRWZMKzlsZ2FIYm5kYVNsWHJWZi9SQXhyNGh4RUhSYWxsL0I0dFdDa2lNYmswMVMyY1I5L29hUUZLQVJzQkxFempsaURkRVg4MGhCa2ZKN1BHVWdiNUt1WmNlcjNpcTJCSi9jNG0yRVdoTzRkVGtxMERKZ2poQnB2aWNUcDhxZndFYkdManpRTFg3dW1TYkFyN1JReTVOTFRjdTh2ZDlMbFpxREJodXd2ZSs3VFJSL1diR0hZbkhORjR6MXBBND0iLCJrZXlzZXRJbmZvIjp7InByaW1hcnlLZXlJZCI6MjY2NzEwODM0Miwia2V5SW5mbyI6W3sidHlwZVVybCI6InR5cGUuZ29vZ2xlYXBpcy5jb20vZ29vZ2xlLmNyeXB0by50aW5rLkp3dEVjZHNhUHJpdmF0ZUtleSIsInN0YXR1cyI6IkVOQUJMRUQiLCJrZXlJZCI6MjY2NzEwODM0Miwib3V0cHV0UHJlZml4VHlwZSI6IlRJTksifV19fQ
+    publicJWTKeyset: eyJlbmNyeXB0ZWRLZXlzZXQiOiJBWVF1RS9KVVFmblZOcVlmTm8wVUZUVXF1cHZUU2lQUmlmcWRaVlh6VjcrSVVaN0dmTk1obUJrcUE5M3hKY3hTc2Q3bHdTTFJzT1V1MGliYm5ocS96Q0NTNTQzK3g1SGhYQjh1L1FIN2w1ckpvNGRLTFF4NExYYlZjM3JKV294ejBqdTFiTzlOb21hTTZuMVQzcTFveEpPaGt5R0haZFE1SjR5UlpFTXc1OXJIZ1NSeWFCaVgxQVNxay9mZkVtUHRTeC91dHFzK2R1M1FZcHVrT3NkSW1jeWsxa3BHeWZxVnFyR1hhSkNNRmlUWmZCY294amtjODhveUFRPT0iLCJrZXlzZXRJbmZvIjp7InByaW1hcnlLZXlJZCI6MjY2NzEwODM0Miwia2V5SW5mbyI6W3sidHlwZVVybCI6InR5cGUuZ29vZ2xlYXBpcy5jb20vZ29vZ2xlLmNyeXB0by50aW5rLkp3dEVjZHNhUHVibGljS2V5Iiwic3RhdHVzIjoiRU5BQkxFRCIsImtleUlkIjoyNjY3MTA4MzQyLCJvdXRwdXRQcmVmaXhUeXBlIjoiVElOSyJ9XX19
+  masterKeyset: eyJwcmltYXJ5S2V5SWQiOjIyMTc2MTIyNzQsImtleSI6W3sia2V5RGF0YSI6eyJ0eXBlVXJsIjoidHlwZS5nb29nbGVhcGlzLmNvbS9nb29nbGUuY3J5cHRvLnRpbmsuQWVzR2NtS2V5IiwidmFsdWUiOiJHaUJONE52ejlOUGdocWVCVUtVYklLQXB3NkFGZlc2RDJlZGNjQ0l1MC9BcVhRPT0iLCJrZXlNYXRlcmlhbFR5cGUiOiJTWU1NRVRSSUMifSwic3RhdHVzIjoiRU5BQkxFRCIsImtleUlkIjoyMjE3NjEyMjc0LCJvdXRwdXRQcmVmaXhUeXBlIjoiVElOSyJ9XX0
+internalClient:
+  base:
+    tlsStrategy: tls
+  inheritBase: true
+logger:
+  format: console
+  level: warn
+monitoring:
+  enabled: true
+  permittedTenants: null
+  probeTimeout: 30000000000
+msgQueue:
+  enabled: true
+  kind: rabbitmq
+  postgres:
+    qos: 100
+  rabbitmq:
+    compressionThreshold: 5120
+    maxDeathCount: 5
+    maxPubChans: 20
+    maxSubChans: 100
+    qos: 100
+observability:
+  maxBatchSize: 1000
+olap:
+  pollInterval: 2
+otel:
+  serviceName: server
+  traceIdRatio: "1"
+payloadStore:
+  enableDagDataPayloadDualWrites: true
+  enableOLAPPayloadDualWrites: true
+  enablePayloadDualWrites: true
+  enableTaskEventPayloadDualWrites: true
+  externalCutoverBatchSize: 1000
+  externalCutoverNumConcurrentOffloads: 10
+  externalCutoverProcessInterval: 15000000000
+  inlineStoreTTLDays: 2
+prometheus:
+  address: :9090
+  path: /metrics
+pylon: {}
+runtime:
+  allowChangePassword: true
+  allowCreateTenant: true
+  allowInvites: true
+  allowSignup: true
+  apiRateLimit: 10
+  apiRateLimitWindow: 300000000000
+  defaultEngineVersion: V1
+  flushItemsThreshold: 100
+  flushPeriodMilliseconds: 10
+  grpcBindAddress: 0.0.0.0
+  grpcBroadcastAddress: localhost:7077
+  grpcMaxMsgSize: 4194304
+  grpcPort: 7070
+  grpcRateLimit: 1000
+  grpcStaticStreamWindowSize: 10485760
+  grpcTriggerWriteSlots: 5
+  grpcTriggerWritesEnabled: true
+  grpcWorkerMaxLockAcquisitionTime: 250000000
+  healthcheck: true
+  healthcheckPort: 8733
+  limits:
+    defaultCronAlarmLimit: 2
+    defaultCronLimit: 5
+    defaultEventAlarmLimit: 800
+    defaultEventLimit: 1000
+    defaultEventWindow: 86400000000000
+    defaultIncomingWebhookALarmLimit: 4
+    defaultIncomingWebhookLimit: 5
+    defaultScheduleAlarmLimit: 750
+    defaultScheduleLimit: 1000
+    defaultTaskRunAlarmLimit: 1600
+    defaultTaskRunLimit: 2000
+    defaultTaskRunWindow: 86400000000000
+    defaultTenantRetentionPeriod: 720h
+    defaultWorkerAlarmLimit: 2
+    defaultWorkerLimit: 3
+    defaultWorkerSlotAlarmLimit: 1600
+    defaultWorkerSlotLimit: 2000
+    defaultWorkflowRunAlarmLimit: 1600
+    defaultWorkflowRunLimit: 2000
+    defaultWorkflowRunWindow: 86400000000000
+  logIngestionEnabled: true
+  maxConcurrent: 50
+  maxInternalRetryCount: 10
+  maxPendingInvites: 100
+  monitoring:
+    enabled: true
+    permittedTenants: null
+    probeTimeout: 30000000000
+  optimisticSchedulingEnabled: true
+  optimisticSchedulingSlots: 5
+  port: 8080
+  replayEnabled: true
+  requeueLimit: 100
+  schedulerConcurrencyPollingMaxInterval: 5000000000
+  schedulerConcurrencyPollingMinInterval: 500000000
+  schedulerConcurrencyRateLimit: 20
+  singleQueueLimit: 100
+  streamEventBufferTimeout: 5000000000
+  taskOperationLimits:
+    durableSleepLimit: 1000
+    reassignLimit: 1000
+    retryQueueLimit: 1000
+    timeoutLimit: 1000
+  updateConcurrentFactor: 10
+  updateHashFactor: 100
+  url: http://localhost:8888
+  waitForFlush: 1
+  workflowRunBufferSize: 1000
+sampling:
+  samplingRate: 1
+securityCheck:
+  enabled: true
+  endpoint: https://security.hatchet.run
+services:
+- all
+statusUpdates:
+  dagBatchSizeLimit: 1000
+  taskBatchSizeLimit: 1000
+tenantAlerting:
+  slack:
+    scopes:
+    - incoming-webhook
+tls:
+  tlsStrategy: tls

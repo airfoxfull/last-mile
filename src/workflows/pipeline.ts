@@ -1,7 +1,7 @@
-import { Hatchet } from "@hatchet-dev/typescript-sdk";
+import { HatchetClient } from "@hatchet-dev/typescript-sdk";
 import { paperclip } from "../paperclip/client.js";
 
-const hatchet = Hatchet.init();
+const hatchet = HatchetClient.init();
 
 // ── Pipeline Workflow: plan → approve → execute ──
 

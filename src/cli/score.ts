@@ -1,4 +1,4 @@
-import { Hatchet } from "@hatchet-dev/typescript-sdk";
+import { HatchetClient } from "@hatchet-dev/typescript-sdk";
 
 // CLI tool for human scoring / approval
 async function main() {
@@ -29,7 +29,7 @@ async function main() {
     process.exit(0);
   }
 
-  const hatchet = Hatchet.init();
+  const hatchet = HatchetClient.init();
 
   console.log(`[score] ${approve ? "批准" : "拒绝"}, 分数: ${score}, Issue: ${issueId}`);
 

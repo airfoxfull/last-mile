@@ -1,4 +1,4 @@
-import { Hatchet } from "@hatchet-dev/typescript-sdk";
+import { HatchetClient } from "@hatchet-dev/typescript-sdk";
 
 // Trigger a pipeline run
 async function main() {
@@ -19,7 +19,7 @@ async function main() {
     process.exit(1);
   }
 
-  const hatchet = Hatchet.init();
+  const hatchet = HatchetClient.init();
 
   // Create issue in Paperclip first
   const PAPERCLIP_URL = process.env.PAPERCLIP_URL ?? "http://localhost:3100";

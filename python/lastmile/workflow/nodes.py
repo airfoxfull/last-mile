@@ -166,8 +166,10 @@ async def fool_challenge(state: State) -> dict:
             await client.write_file(agent_id, "workspace/plan.md", response)
 
         # ── 收敛判断 ──
-        # 如果 Planner 的回应中包含"仍有分歧"相关内容少于 100 字，认为已收敛
-        if "仍有分歧" not in response or round_num == max_rounds:
+        # 多关键词匹配，不依赖单一精确短语
+        divergence_signals = ["仍有分歧", "未解决", "不同意", "保留意见", "争议", "待讨论", "unresolved"]
+        has_divergence = any(s in response for s in divergence_signals)
+        if not has_divergence or round_num == max_rounds:
             print(f"[fool] 辩论收敛（第 {round_num} 轮）")
             break
 

@@ -24,7 +24,8 @@ def print_report(body: str):
 
 
 def print_challenge(body: str):
-    console.print(Panel(Markdown(body[:1500]), title="🤔 Fool 挑战", border_style="yellow"))
+    console.print(Panel(Markdown(body[:3000]), title="🤔 Fool 辩论记录", border_style="yellow",
+                        subtitle="人类只需裁决争议点"))
 
 
 def print_agents(agents: list[dict]):

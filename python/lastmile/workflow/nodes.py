@@ -105,62 +105,108 @@ async def check_plan_gate(state: State) -> dict:
 
 
 async def fool_challenge(state: State) -> dict:
-    """节点3: The Fool 辩论（可选）"""
+    """节点3: The Fool 辩论循环 — 挑战 plan，最多 3 轮收敛"""
     fool_id = state.get("fool_id", "")
     if not fool_id:
         print("[fool] 跳过（未配置）")
         return {"phase": "awaiting_approval"}
 
-    plan_body = state.get("plan_body", "")
-
-    prompt = (
-        f"你是【挑战者】。审查以下计划，找出漏洞、风险和不合理之处：\n\n"
-        f"{plan_body}\n\n"
-        f"请输出你的挑战意见。"
-    )
-    print(f"[fool] 唤醒 Fool {fool_id}")
-    challenge = await client.send_message(fool_id, prompt)
-    print(f"[fool] 挑战完成 ({len(challenge)} 字)")
-
-    if challenge:
-        await client.write_file(fool_id, "workspace/challenge.md", challenge)
-
-    # 让 Planner 回应挑战
     agent_id = state["agent_id"]
-    response_prompt = (
-        f"你的计划被挑战了：\n\n{challenge[:1000]}\n\n"
-        f"请更新你的计划来回应这些质疑。直接输出更新后的完整计划。"
-    )
-    updated = await client.send_message(agent_id, response_prompt,
-                                         state.get("plan_session_id"))
-    if updated:
-        await client.write_file(agent_id, "workspace/plan.md", updated)
+    plan_body = state.get("plan_body", "")
+    requirement = state.get("requirement", "")
+    max_rounds = 3
+    debate_log: list[dict] = []
 
-    print("[fool] ✅ 辩论完成")
+    for round_num in range(1, max_rounds + 1):
+        print(f"[fool] 第 {round_num}/{max_rounds} 轮辩论")
+
+        # ── Fool 挑战 plan ──
+        challenge_prompt = (
+            f"你是【The Fool — 批判性思维挑战者】。第 {round_num} 轮。\n\n"
+            f"## 原始需求\n{requirement}\n\n"
+            f"## 当前计划\n{plan_body}\n\n"
+            f"请从以下维度挑战这个计划：\n"
+            f"1. **假设审查**：计划中有哪些未经验证的假设？\n"
+            f"2. **风险盲区**：有哪些被忽略的风险或失败模式？\n"
+            f"3. **执行漏洞**：执行步骤是否有遗漏或顺序不当？\n"
+            f"4. **预算合理性**：预算估算是否合理？\n\n"
+            f"要求：\n"
+            f"- 每个质疑必须具体，不能泛泛而谈\n"
+            f"- 指出问题的同时给出建设性建议\n"
+            f"- 最后标注【核心争议点】— 你认为最关键的 1-3 个问题\n"
+        )
+
+        challenge = await client.send_message(fool_id, challenge_prompt)
+        print(f"[fool] Fool 挑战 ({len(challenge)} 字)")
+
+        # ── Planner 回应挑战 ──
+        response_prompt = (
+            f"你的计划被 The Fool 挑战了（第 {round_num} 轮）。\n\n"
+            f"## Fool 的质疑\n{challenge[:2000]}\n\n"
+            f"请逐条回应：\n"
+            f"- 如果质疑合理 → 修改计划，说明改了什么\n"
+            f"- 如果质疑不合理 → 反驳，给出理由\n\n"
+            f"最后输出【更新后的完整计划】（保持四个章节格式）。\n"
+            f"并标注【已解决的争议】和【仍有分歧的争议】。"
+        )
+
+        response = await client.send_message(agent_id, response_prompt,
+                                              state.get("plan_session_id"))
+        print(f"[fool] Planner 回应 ({len(response)} 字)")
+
+        debate_log.append({
+            "round": round_num,
+            "challenge": challenge[:1000],
+            "response": response[:1000],
+        })
+
+        # 更新 plan
+        if response and len(response) > 100:
+            plan_body = response
+            await client.write_file(agent_id, "workspace/plan.md", response)
+
+        # ── 收敛判断 ──
+        # 如果 Planner 的回应中包含"仍有分歧"相关内容少于 100 字，认为已收敛
+        if "仍有分歧" not in response or round_num == max_rounds:
+            print(f"[fool] 辩论收敛（第 {round_num} 轮）")
+            break
+
+    # 保存挑战文档
+    challenge_summary = "\n\n".join([
+        f"## 第 {d['round']} 轮\n### Fool 质疑\n{d['challenge']}\n### Planner 回应\n{d['response']}"
+        for d in debate_log
+    ])
+    await client.write_file(fool_id, "workspace/challenge.md", challenge_summary)
+
+    print(f"[fool] ✅ 辩论完成（{len(debate_log)} 轮）")
     return {
-        "challenge_body": challenge,
-        "plan_body": updated or plan_body,
+        "challenge_body": challenge_summary,
+        "plan_body": plan_body,
         "phase": "awaiting_approval",
     }
 
 
 async def human_approval(state: State) -> dict:
-    """节点4: interrupt() 等人类打分"""
+    """节点4: interrupt() 等人类打分
+
+    人类看到的是：经过 Fool 辩论打磨的计划 + 争议摘要。
+    人类只需裁决争议点，不需要审查整个计划。
+    """
     from langgraph.types import interrupt
 
     plan_preview = state.get("plan_body", "")[:500]
-    challenge = state.get("challenge_body", "")[:300]
+    challenge = state.get("challenge_body", "")
 
     print("[human_approval] ⏸ 等待人类审批...")
-    print(f"  计划预览: {plan_preview[:100]}...")
     if challenge:
-        print(f"  Fool 挑战: {challenge[:100]}...")
+        print(f"  [提示] 计划已经过 Fool 辩论打磨，请重点关注争议点")
 
     response = interrupt({
         "type": "plan_approval",
         "message": "请审批计划（1-5 分，>= 3 通过）",
         "plan_preview": plan_preview,
-        "challenge": challenge,
+        "has_debate": bool(challenge),
+        "debate_summary": challenge[:500] if challenge else "",
     })
 
     score = response.get("score", 0) if isinstance(response, dict) else 0
@@ -241,6 +287,13 @@ async def check_report_gate(state: State) -> dict:
     if not gate.ok:
         reason = f"报告格式不符，缺少: {'、'.join(gate.missing)}"
         print(f"[check_report] ⚠️ {reason}")
+        return {
+            "report_body": report_body,
+            "phase": "report_failed",
+            "rework_count": rework_count + 1,
+            "last_fail_reason": reason,
+            "rework_history": rework_history + [reason],
+        }
 
     print("[check_report] ✅ 门控通过")
     return {"report_body": report_body, "phase": "report_passed"}

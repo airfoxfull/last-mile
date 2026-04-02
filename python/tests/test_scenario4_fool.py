@@ -111,19 +111,21 @@ async def main():
 
         if interrupt_data and isinstance(interrupt_data, dict):
             has_plan_preview = bool(interrupt_data.get("plan_preview", ""))
-            has_challenge_in_payload = bool(interrupt_data.get("challenge", ""))
+            # 新版用 debate_summary，旧版用 challenge
+            debate_field = interrupt_data.get("debate_summary", "") or interrupt_data.get("challenge", "")
+            has_challenge_in_payload = bool(debate_field)
             check("F4-interrupt 包含 plan_preview",
                   has_plan_preview,
                   f"preview 长度={len(interrupt_data.get('plan_preview', ''))}")
-            check("F5-interrupt 包含 challenge",
+            check("F5-interrupt 包含 debate/challenge",
                   has_challenge_in_payload,
-                  f"challenge 长度={len(interrupt_data.get('challenge', ''))}")
+                  f"debate 长度={len(debate_field)}")
         else:
             check("F4-interrupt 包含 plan_preview", False, f"interrupt_data={interrupt_data}")
-            check("F5-interrupt 包含 challenge", False, "no interrupt data")
+            check("F5-interrupt 包含 debate/challenge", False, "no interrupt data")
     else:
         check("F4-interrupt 包含 plan_preview", False, "no interrupt")
-        check("F5-interrupt 包含 challenge", False, "no interrupt")
+        check("F5-interrupt 包含 debate/challenge", False, "no interrupt")
 
     # 打印挑战内容预览
     if challenge_body:
